@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>论文日报 {{date}}</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --card: #ffffff;
+    --text: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e7eb;
+    --accent: #2563eb;
+    --warn: #b45309;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px 16px 64px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                 "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
+    line-height: 1.7;
+    font-size: 15px;
+  }
+  .wrap { max-width: 780px; margin: 0 auto; }
+  header { margin-bottom: 28px; }
+  h1 { font-size: 24px; margin: 0 0 6px; letter-spacing: 0.5px; }
+  .sub { color: var(--muted); font-size: 13px; }
+  h2 {
+    font-size: 17px;
+    margin: 32px 0 12px;
+    padding-left: 10px;
+    border-left: 4px solid var(--accent);
+  }
+  article {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+    scroll-margin-top: 16px;
+  }
+  article:target { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
+  .t { font-size: 16px; font-weight: 600; margin: 0 0 6px; }
+  .meta { color: var(--muted); font-size: 12.5px; margin-bottom: 10px; }
+  .tldr {
+    background: #eff6ff;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+  }
+  .tldr b { color: var(--accent); }
+  .overview {
+    background: #eff6ff;
+    border-left: 4px solid var(--accent);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+  }
+  .overview-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: .5px;
+    margin-bottom: 6px;
+  }
+  .detail { margin-top: 4px; }
+  .sec {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 20px 0 8px;
+    padding-left: 9px;
+    border-left: 3px solid var(--accent);
+  }
+  .sec-body, .detail-para { margin: 0 0 10px; white-space: pre-wrap; }
+  .fail { color: var(--warn); }
+  .links { margin-top: 10px; font-size: 13px; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  footer { margin-top: 40px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>论文日报 {{date}}</h1>
+    <div class="sub">每日 arXiv 精选 · 计算机 / 具身智能 / 飞行器</div>
+  </header>
+
+  {{cards}}
+
+  <footer>上一期：{{prev_link}}</footer>
+</div>
+</body>
+</html>

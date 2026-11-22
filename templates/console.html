@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>论文日报 · 控制台</title>
+<style>
+  :root{
+    --bg:#f7f7f5; --surface:#fff; --inset:#f2f2ef; --ink:#202020; --ink-soft:#3b3b39;
+    --muted:#656565; --faint:#77776f; --line:#e3e3df; --line-strong:#cfcfc9;
+    --accent:#2b2b29; --accent-ink:#fff; --chip:#f0f0ed; --input-bg:#fbfbf9;
+    --green:#1a765d; --green-bg:#eaf7f1; --orange:#8e5a14; --orange-bg:#fff4e4;
+    --red:#c15361; --red-bg:#fff0f2; --shadow:0 1px 2px rgba(24,24,24,.05);
+    --mono:Consolas,'SFMono-Regular',monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;
+  }
+  .app{max-width:1180px;margin:auto;padding:24px 32px 32px}
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
+  .topbar h1{font-size:19px;margin:0;font-weight:600;letter-spacing:.2px}
+  .actions{display:flex;align-items:center;gap:10px}
+  .sync{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted)}
+  .sync .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px var(--green-bg)}
+  .btn{
+    border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);
+    padding:6px 14px;border-radius:8px;font-size:13px;cursor:pointer;transition:.15s;
+  }
+  .btn:hover{background:var(--inset)}
+  .btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .btn.primary:hover{background:#000}
+  .btn.ghost{border-color:transparent;background:transparent;color:var(--muted)}
+  .btn.ghost:hover{background:var(--inset);color:var(--ink)}
+  .btn.danger:hover{background:var(--red-bg);border-color:#e7bfc5;color:var(--red)}
+  .btn:disabled{opacity:.5;cursor:default}
+
+  .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;box-shadow:var(--shadow)}
+  .stat.qq{cursor:pointer;transition:.15s}
+  .stat.qq:hover{border-color:var(--line-strong);background:#fff}
+  .stat.qq[data-online="0"]{border-color:#ecd3d7;background:var(--red-bg)}
+  .stat.qq[data-online="0"]:hover{background:#ffe9ec}
+  .stat .label{display:block;font-size:12px;color:var(--muted);margin-bottom:2px}
+  .stat strong{font-size:17px;font-weight:600}
+  .stat small{color:var(--faint);font-size:11.5px;margin-left:4px}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+        padding:18px 22px 20px;box-shadow:var(--shadow);margin-bottom:16px}
+  .card-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .card-head h2{font-size:15px;margin:0;font-weight:600;display:flex;align-items:center;gap:8px}
+  .card-head h2 .subtle{font-weight:400;font-size:12px;color:var(--faint);font-family:var(--mono)}
+  .card-head .spacer{flex:1}
+
+  textarea{
+    width:100%;min-height:200px;resize:vertical;padding:12px 14px;border-radius:10px;
+    border:1px solid var(--line);background:var(--input-bg);color:var(--ink);
+    font:12.5px/1.65 var(--mono);outline:none;
+  }
+  textarea:focus{border-color:var(--line-strong);background:#fff}
+  .field{margin-top:14px}
+  .field:first-of-type{margin-top:0}
+  .field > .lbl{display:block;font-size:12.5px;color:var(--muted);margin-bottom:6px}
+
+  .domain{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px;background:var(--surface)}
+  .domain:last-child{margin-bottom:0}
+  .domain-head{display:flex;align-items:center;gap:10px}
+  .domain-head .d-name{
+    border:1px solid transparent;background:transparent;color:var(--ink);
+    font-size:13.5px;font-weight:600;padding:3px 6px;border-radius:6px;width:150px;
+  }
+  .domain-head .d-name:hover{background:var(--inset)}
+  .domain-head .d-name:focus{outline:none;background:#fff;border-color:var(--line-strong)}
+  .domain-head .d-key{
+    border:1px solid var(--line);background:var(--input-bg);color:var(--ink);
+    font:12px var(--mono);padding:3px 7px;border-radius:6px;width:160px;
+  }
+  .domain-head .key{font:12px var(--mono);color:var(--faint);margin-right:auto}
+  .domain-head .spacer{flex:1}
+  .domain-body{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+  .drow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .drow .lbl{font-size:12.5px;color:var(--muted);flex:none}
+  .drow .dd{flex:1;min-width:220px}
+  .drow .dd-trigger{width:100%;min-width:0;max-width:none}
+  .domain-body input[type=number]{
+    width:62px;padding:4px 8px;border:1px solid var(--line);border-radius:7px;
+    background:var(--input-bg);font:inherit;color:var(--ink);
+  }
+  .domain-body .d-kw{
+    flex:1;min-width:220px;padding:4px 9px;border:1px solid var(--line);border-radius:7px;
+    background:var(--input-bg);font:12px/1.5 var(--mono);color:var(--ink);
+  }
+  .domain-body .d-kw:focus{outline:none;border-color:var(--line-strong);background:#fff}
+
+  .switch{position:relative;display:inline-block;width:38px;height:21px;flex:none}
+  .switch input{opacity:0;width:0;height:0}
+  .slider{position:absolute;inset:0;background:#c9c9c3;border-radius:999px;transition:.18s;cursor:pointer}
+  .slider:before{content:"";position:absolute;width:15px;height:15px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.18s}
+  .switch input:checked + .slider{background:var(--accent)}
+  .switch input:checked + .slider:before{transform:translateX(17px)}
+
+  .dd{position:relative}
+  .dd-trigger{
+    display:flex;flex-wrap:wrap;gap:5px;align-items:center;min-width:240px;max-width:560px;
+    min-height:31px;padding:4px 9px;border:1px solid var(--line);border-radius:8px;
+    background:var(--input-bg);cursor:pointer;font-size:12.5px;color:var(--ink);text-align:left;
+  }
+  .dd-trigger:hover{background:#fff;border-color:var(--line-strong)}
+  .dd-empty{color:var(--faint);font-size:12.5px}
+  .chip{display:inline-flex;align-items:center;gap:5px;background:var(--chip);border-radius:6px;
+        padding:1px 6px;font:12px/1.5 var(--mono);color:var(--ink-soft)}
+  .chip b{cursor:pointer;color:var(--faint);font-weight:400;font-size:13px;line-height:1}
+  .chip b:hover{color:var(--red)}
+  .dd-panel{
+    position:absolute;z-index:30;top:calc(100% + 6px);left:0;width:min(360px,90vw);max-height:320px;overflow:auto;
+    background:var(--surface);border:1px solid var(--line-strong);border-radius:10px;
+    box-shadow:0 10px 28px rgba(20,20,20,.12);padding:10px 12px;
+  }
+  .dd-group{font-size:11.5px;color:var(--faint);margin:8px 0 4px}
+  .dd-group:first-child{margin-top:0}
+  .dd-item{display:flex;align-items:center;gap:8px;padding:3px 4px;border-radius:6px;
+           font:12px var(--mono);cursor:pointer;color:var(--ink-soft)}
+  .dd-item:hover{background:var(--inset)}
+  .dd-item input{accent-color:var(--accent);cursor:pointer;margin:0}
+  .dd-custom{display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+  .dd-custom input{
+    flex:1;padding:4px 8px;border:1px solid var(--line);border-radius:7px;
+    background:var(--input-bg);font:12px var(--mono);color:var(--ink);
+  }
+  .dd-custom input:focus{outline:none;border-color:var(--line-strong);background:#fff}
+
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  input[type=time]{padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--input-bg);font:inherit;color:var(--ink)}
+  .badge{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11.5px;background:var(--chip);color:var(--muted)}
+  .badge.ok{background:var(--green-bg);color:var(--green)}
+  .badge.warn{background:var(--orange-bg);color:var(--orange)}
+  .badge.err{background:var(--red-bg);color:var(--red)}
+
+  pre{background:var(--inset);border:1px solid var(--line);border-radius:10px;padding:12px 14px;
+      font:12px/1.55 var(--mono);color:var(--ink-soft);max-height:340px;overflow:auto;
+      white-space:pre-wrap;word-break:break-all;margin:0}
+  .item{display:flex;justify-content:space-between;gap:12px;padding:9px 12px;
+        border:1px solid var(--line);border-radius:8px;margin-bottom:8px;font-size:13px}
+  .item:last-child{margin-bottom:0}
+  .item a{color:var(--ink);text-decoration:none;font-weight:500}
+  .item a:hover{text-decoration:underline}
+  .item .meta{color:var(--faint);font-size:12px;font-family:var(--mono)}
+  .empty{color:var(--faint);font-size:13px;margin:0}
+
+  #toast{position:fixed;right:22px;bottom:22px;display:flex;flex-direction:column;gap:8px;z-index:99}
+  .toast{background:#2b2b29;color:#f6f6f4;padding:9px 16px;border-radius:9px;font-size:13px;
+         box-shadow:0 6px 22px rgba(0,0,0,.18);animation:in .18s ease}
+  .toast.err{background:#8f3b46}
+  @keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  @media(max-width:900px){.app{padding:18px}.stats{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <h1>论文日报 · 控制台</h1>
+    <div class="actions">
+      <span class="sync"><span class="dot"></span>服务运行中</span>
+      <button class="btn" id="btn-reload">重新读取</button>
+    </div>
+  </header>
+
+  <section class="stats">
+    <div class="stat"><span class="label">今天</span><strong id="s-today">—</strong></div>
+    <div class="stat"><span class="label">累计已推送</span><strong id="s-pushed">—</strong><small>篇</small></div>
+    <div class="stat"><span class="label">每日发送时间</span><strong id="s-time">—</strong></div>
+    <div class="stat"><span class="label">启用领域</span><strong id="s-domains">—</strong></div>
+    <div class="stat qq" id="stat-qq" title="点击查看登录二维码">
+      <span class="label">QQ 通道</span>
+      <strong id="s-qq">—</strong>
+      <small id="s-qq-sub"></small>
+    </div>
+  </section>
+
+  <!-- 1. Prompt -->
+  <section class="card">
+    <div class="card-head">
+      <h2>Prompt</h2>
+      <span class="spacer"></span>
+      <button class="btn primary" id="btn-save-prompts">保存 Prompt</button>
+    </div>
+    <div class="field">
+      <span class="lbl">筛选 · prompts/pick.txt</span>
+      <textarea id="pick" spellcheck="false" placeholder="从候选里挑哪几篇"></textarea>
+    </div>
+    <div class="field">
+      <span class="lbl">总结 · prompts/write.txt</span>
+      <textarea id="write" spellcheck="false" placeholder="怎么把论文写成六节解读"></textarea>
+    </div>
+  </section>
+
+  <!-- 2. 领域 -->
+  <section class="card">
+    <div class="card-head">
+      <h2>领域与篇数</h2>
+      <span class="spacer"></span>
+      <button class="btn" id="btn-add-domain">+ 新增领域</button>
+      <button class="btn primary" id="btn-save-domains">保存领域</button>
+    </div>
+    <div id="domain-list"></div>
+  </section>
+
+  <!-- 3. 发送时间 -->
+  <section class="card">
+    <div class="card-head"><h2>每日发送时间</h2></div>
+    <div class="row">
+      <input type="time" id="time" step="60">
+      <button class="btn primary" id="btn-time">写入定时任务</button>
+      <span id="time-state"></span>
+    </div>
+  </section>
+
+  <!-- 4. 日志 -->
+  <section class="card">
+    <div class="card-head">
+      <h2>运行日志 <span class="subtle">logs/run.log</span></h2>
+      <span class="spacer"></span>
+      <button class="btn" id="btn-log">刷新</button>
+    </div>
+    <pre id="log">加载中…</pre>
+  </section>
+
+  <!-- 5. 历史日报 -->
+  <section class="card">
+    <div class="card-head"><h2>历史日报</h2></div>
+    <div id="history">加载中…</div>
+  </section>
+</div>
+<div id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+let model = [], catalog = [], removedKeys = [], openIdx = null, qqState = null;
+
+function toast(msg, isErr){
+  const el = document.createElement('div');
+  el.className = 'toast' + (isErr ? ' err' : '');
+  el.textContent = msg;
+  $('#toast').appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+
+async function api(path, body){
+  const opt = body ? {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)} : {};
+  const r = await fetch(path, opt);
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || j.ok === false) throw new Error(j.message || ('HTTP ' + r.status));
+  return j;
+}
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const KEY_RE = /^[a-z][a-z0-9_]{1,23}$/;
+
+/* ---------- 领域列表 ---------- */
+
+function chipsHtml(d){
+  if (!d.categories.length) return '<span class="dd-empty">选择论文来源</span>';
+  return d.categories.map(c =>
+    `<span class="chip">${esc(c)}<b data-del="${esc(c)}">×</b></span>`).join('');
+}
+
+function renderDomains(){
+  const known = new Set(catalog.flatMap(g => g.items));
+  $('#domain-list').innerHTML = model.map((d, i) => `
+    <div class="domain" data-idx="${i}">
+      <div class="domain-head">
+        <label class="switch">
+          <input type="checkbox" class="d-on" ${d.enabled ? 'checked' : ''}>
+          <span class="slider"></span>
+        </label>
+        ${d.isNew
+          ? `<input class="d-key" placeholder="标识，如 robotics">`
+          : `<input class="d-name" value="${esc(d.name)}" maxlength="20">`}
+        ${d.isNew ? '' : `<span class="key">${esc(d.key)}</span>`}
+        <span class="spacer"></span>
+        <button class="btn ghost danger d-del">删除</button>
+      </div>
+      <div class="domain-body">
+        <div class="drow">
+          <span class="lbl">来源</span>
+          <div class="dd">
+            <button class="dd-trigger">${chipsHtml(d)}</button>
+          </div>
+          <span class="lbl">篇数</span>
+          <input type="number" class="d-quota" min="1" max="10" value="${d.quota}">
+        </div>
+        <div class="drow">
+          <span class="lbl">关键词</span>
+          <input class="d-kw" spellcheck="false" placeholder="逗号分隔，用于粗筛打分"
+                 value="${esc((d.keyword_list || []).join(', '))}">
+        </div>
+      </div>
+    </div>`).join('');
+
+  if (openIdx !== null && openIdx < model.length) openPanel(openIdx);
+  updateStats();
+}
+
+function updateStats(){
+  const on = model.filter(d => d.enabled).length;
+  const sum = model.filter(d => d.enabled)
+    .reduce((n, d) => n + (parseInt(d.quota) || 0), 0);
+  $('#s-domains').innerHTML = `${on} <small>· 合计 ${sum} 篇/期</small>`;
+}
+
+function panelHtml(d){
+  const known = new Set(catalog.flatMap(g => g.items));
+  let h = '';
+  for (const g of catalog){
+    h += `<div class="dd-group">${esc(g.group)}</div>`;
+    for (const it of g.items){
+      h += `<label class="dd-item"><input type="checkbox" data-cat="${esc(it)}"
+              ${d.categories.includes(it) ? 'checked' : ''}><span>${esc(it)}</span></label>`;
+    }
+  }
+  const extra = d.categories.filter(c => !known.has(c));
+  if (extra.length){
+    h += '<div class="dd-group">自定义</div>';
+    for (const it of extra){
+      h += `<label class="dd-item"><input type="checkbox" data-cat="${esc(it)}" checked><span>${esc(it)}</span></label>`;
+    }
+  }
+  h += `<div class="dd-custom">
+          <input placeholder="其他分类，如 cs.MM" spellcheck="false">
+          <button class="btn">添加</button>
+        </div>`;
+  return h;
+}
+
+function openPanel(idx){
+  closePanel();
+  const row = document.querySelector(`.domain[data-idx="${idx}"]`);
+  if (!row) return;
+  const p = document.createElement('div');
+  p.className = 'dd-panel';
+  p.dataset.idx = idx;
+  p.innerHTML = panelHtml(model[idx]);
+  row.querySelector('.dd').appendChild(p);
+  openIdx = idx;
+}
+
+function closePanel(){
+  document.querySelectorAll('.dd-panel').forEach(p => p.remove());
+  openIdx = null;
+}
+
+function refreshChips(idx){
+  const row = document.querySelector(`.domain[data-idx="${idx}"]`);
+  if (!row) return;
+  row.querySelector('.dd-trigger').innerHTML = chipsHtml(model[idx]);
+}
+
+document.querySelector('#domain-list').addEventListener('click', e => {
+  const t = e.target;
+
+  const delChip = t.closest('[data-del]');
+  if (delChip){
+    e.stopPropagation();
+    const idx = +t.closest('.domain').dataset.idx;
+    const cat = delChip.dataset.del;
+    model[idx].categories = model[idx].categories.filter(c => c !== cat);
+    refreshChips(idx);
+    if (openIdx === idx) openPanel(idx);
+    return;
+  }
+
+  const trigger = t.closest('.dd-trigger');
+  if (trigger){
+    const idx = +t.closest('.domain').dataset.idx;
+    openIdx === idx ? closePanel() : openPanel(idx);
+    return;
+  }
+
+  if (t.closest('.d-del')){
+    const idx = +t.closest('.domain').dataset.idx;
+    const d = model[idx];
+    if (!d.isNew) removedKeys.push(d.key);
+    model.splice(idx, 1);
+    closePanel();
+    renderDomains();
+    return;
+  }
+});
+
+document.querySelector('#domain-list').addEventListener('change', e => {
+  const cb = e.target.closest('.dd-item input[type=checkbox]');
+  if (cb){
+    const idx = openIdx;
+    if (idx === null) return;
+    const cat = cb.dataset.cat;
+    const list = model[idx].categories;
+    if (cb.checked){ if (!list.includes(cat)) list.push(cat); }
+    else { model[idx].categories = list.filter(c => c !== cat); }
+    refreshChips(idx);
+    return;
+  }
+  if (e.target.classList.contains('d-on')){
+    const idx = +e.target.closest('.domain').dataset.idx;
+    model[idx].enabled = e.target.checked;
+    updateStats();
+  }
+});
+
+document.querySelector('#domain-list').addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const inp = e.target.closest('.dd-custom input');
+  if (!inp) return;
+  e.preventDefault();
+  inp.parentElement.querySelector('.btn').click();
+});
+
+document.querySelector('#domain-list').addEventListener('click', e => {
+  const btn = e.target.closest('.dd-custom .btn');
+  if (!btn) return;
+  e.preventDefault();
+  const inp = btn.parentElement.querySelector('input');
+  const val = inp.value.trim();
+  if (!val) return;
+  if (!/^[a-z][a-z-]*(\.[A-Za-z][A-Za-z-]*)?$/.test(val)){
+    toast('分类格式不对，示例：cs.AI、eess.SY', true);
+    return;
+  }
+  const idx = openIdx;
+  if (idx === null) return;
+  if (!model[idx].categories.includes(val)) model[idx].categories.push(val);
+  inp.value = '';
+  refreshChips(idx);
+  openPanel(idx);
+});
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.dd')) closePanel();
+});
+
+/* ---------- 保存 ---------- */
+
+function collectDomains(){
+  const rows = [...document.querySelectorAll('.domain')];
+  return rows.map(el => {
+    const idx = +el.dataset.idx;
+    const m = model[idx];
+    return {
+      key: m.isNew ? el.querySelector('.d-key').value.trim() : m.key,
+      name: el.querySelector('.d-name') ? el.querySelector('.d-name').value.trim() : '',
+      categories: m.categories.slice(),
+      keywords: el.querySelector('.d-kw').value.split(',').map(s => s.trim()).filter(Boolean),
+      quota: parseInt(el.querySelector('.d-quota').value) || 3,
+      enabled: el.querySelector('.d-on').checked,
+    };
+  });
+}
+
+async function saveDomains(){
+  const domains = collectDomains();
+  for (const d of domains){
+    if (!KEY_RE.test(d.key)) throw new Error(`领域标识不合法：${d.key || '(空)'}，需 2-24 位小写字母/数字/下划线`);
+    if (!d.name) throw new Error(`领域 ${d.key} 还没填名称`);
+    if (!d.categories.length) throw new Error(`领域 ${d.name} 至少选一个论文来源`);
+  }
+  if (!domains.some(d => d.enabled)) throw new Error('至少启用一个领域');
+  await api('/api/domains', {domains, removed: removedKeys});
+  toast('领域已保存');
+  await load();
+}
+
+async function savePrompts(){
+  await api('/api/prompts', {pick: $('#pick').value, write: $('#write').value});
+  toast('Prompt 已保存');
+}
+
+async function saveSchedule(){
+  const t = $('#time').value;
+  if (!t) throw new Error('请选择时间');
+  await api('/api/schedule', {time: t});
+  toast('定时任务已更新');
+  await load();
+}
+
+/* ---------- 渲染 ---------- */
+
+function renderSchedule(sc){
+  const sysd = sc.backend === 'systemd';
+  $('#s-time').textContent = sc.exists ? sc.time : '未设置';
+  $('#time').value = sc.time || '07:30';
+  $('#btn-time').textContent = sysd ? '写入 systemd 定时器' : '写入 Windows 计划任务';
+
+  const badges = [`<span class="badge ${sc.exists ? 'ok' : 'warn'}">${sc.exists ? '已创建' : '尚未创建'}</span>`];
+  if (!sysd) badges.push(`<span class="badge">唤醒 ${sc.wake ? '✓' : '✗'}</span>`);
+  badges.push(`<span class="badge">错过补跑 ${sc.catch_up ? '✓' : '✗'}</span>`);
+  if (sysd && sc.active !== undefined){
+    badges.push(`<span class="badge ${sc.active ? 'ok' : 'warn'}">timer ${sc.active ? '运行中' : '未启用'}</span>`);
+  }
+  $('#time-state').innerHTML = badges.join(' ');
+}
+
+function renderQQ(q){
+  qqState = q;
+  const card = $('#stat-qq');
+  card.dataset.online = q.online ? '1' : '0';
+  $('#s-qq').innerHTML = q.online
+    ? '<span class="badge ok">在线</span>'
+    : '<span class="badge err">离线</span>';
+  $('#s-qq-sub').textContent = q.online
+    ? (q.account || '已连接')
+    : (q.error ? `探不到：${q.error}` : '需要扫码登录');
+}
+
+async function refreshQQ(){
+  try { renderQQ(await api('/api/qq')); } catch (e) { /* 静默 */ }
+}
+
+function renderHistory(files){
+  $('#history').innerHTML = files.length
+    ? files.map(f => `
+      <div class="item">
+        <a href="/history/${encodeURIComponent(f.name)}" target="_blank">${esc(f.name)}</a>
+        <span class="meta">${esc(f.mtime)} · ${(f.size/1024).toFixed(0)} KB</span>
+      </div>`).join('')
+    : '<p class="empty">还没有历史日报。</p>';
+}
+
+async function load(){
+  const d = await api('/api/state');
+  catalog = d.catalog || [];
+  removedKeys = [];
+  model = d.domains.map(x => ({
+    key: x.key,
+    name: x.name,
+    categories: (x.categories || []).slice(),
+    keyword_list: (x.keyword_list || []).slice(),
+    quota: x.quota,
+    enabled: x.enabled,
+    isNew: false,
+  }));
+  $('#pick').value = d.prompts.pick;
+  $('#write').value = d.prompts.write;
+  renderDomains();
+  renderSchedule(d.schedule);
+  renderQQ(d.qq || {});
+  renderHistory(d.history || []);
+  $('#log').textContent = (d.logs || []).join('\n') || '（暂无日志）';
+  $('#s-today').textContent = d.stats.today;
+  $('#s-pushed').textContent = d.stats.pushed_total;
+}
+
+/* ---------- 事件 ---------- */
+
+$('#btn-add-domain').addEventListener('click', () => {
+  closePanel();
+  model.push({key:'', name:'', categories:[], keyword_list:[], quota:3, enabled:true, isNew:true});
+  renderDomains();
+  const rows = document.querySelectorAll('.domain');
+  const last = rows[rows.length - 1];
+  if (last) last.querySelector('.d-key').focus();
+});
+
+$('#btn-save-domains').addEventListener('click', () => saveDomains().catch(e => toast(e.message, true)));
+$('#btn-save-prompts').addEventListener('click', () => savePrompts().catch(e => toast(e.message, true)));
+$('#btn-time').addEventListener('click', () => saveSchedule().catch(e => toast(e.message, true)));
+$('#btn-reload').addEventListener('click', () => load().then(() => toast('已重新读取')).catch(e => toast(e.message, true)));
+$('#btn-log').addEventListener('click', async () => {
+  try {
+    const d = await api('/api/logs');
+    $('#log').textContent = (d.lines || []).join('\n') || '（暂无日志）';
+    toast('日志已刷新');
+  } catch (e){ toast(e.message, true); }
+});
+
+$('#stat-qq').addEventListener('click', () => {
+  if (!qqState || qqState.qr_age_sec === null || qqState.qr_age_sec === undefined){
+    toast('还没有二维码：NapCat 只在需要登录时才生成');
+    return;
+  }
+  window.open('/qq/qrcode.png?t=' + Date.now(), '_blank');
+});
+
+load().catch(e => toast('加载失败：' + e.message, true));
+setInterval(refreshQQ, 60000);
+</script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+# paper-radar 配置
+# 注意：API Key 不写在本文件，从系统环境变量读取（见 llm.api_key_env）
+
+# ========== 必填 ==========
+llm:
+  # 2026-11-12：改用 DeepSeek 官方 API。环境变量名沿用历史命名，值填 DeepSeek 的 key 即可
+  base_url: "https://api.deepseek.com"
+  model: "deepseek-flash"
+  api_key_env: "DASHSCOPE_API_KEY"
+
+qq:
+  api_base: "http://127.0.0.1:3000"   # NapCat OneBot HTTP 服务地址
+  group_id: 759980091                  # 论文日报推送目标群
+  access_token: ""                    # NapCat 的 OneBot HTTP token；填你自己的，空字符串表示不鉴权
+
+publish:
+  repo_dir: "C:/Users/guff/paper-radar-site"   # TODO: 站点仓库本地路径
+  site_dir: "docs"
+  public_url: "https://guff99.github.io/paper-radar-site/"   # 结尾必须有斜杠
+  branch: "main"
+
+store:
+  db_path: "data/pushed.db"
+
+# ========== 可选（有默认值） ==========
+run:
+  window_hours: 72          # 采集窗口：72 小时（arXiv 索引有约 1 天延迟）
+  per_category_limit: 100   # 每个 arXiv 分类取多少条
+  timeout_sec: 40
+  retries: 3
+  request_interval: 3.0     # 两次 arXiv 请求间隔（秒）
+  max_message_chars: 3800   # 单条 QQ 消息上限，超了记 warning
+
+summarize:
+  fulltext: true            # 把论文全文喂给模型；抓不到会自动退回摘要
+  fulltext_max_chars: 40000 # 全文截断上限（字符），约 1.2 万 token
+  fulltext_timeout: 30      # 单篇全文抓取超时（秒）
+  timeout_sec: 150          # 单次总结调用超时；长输入比 run.timeout_sec 慢得多
+
+domains:
+  computer:
+    name: 计算机
+    categories: [cs.AI, cs.LG, cs.CV, cs.CL]
+    keywords: [transformer, diffusion, LLM, pretrain, benchmark, agent, reasoning]
+    quota: 3
+    enabled: true
+  embodied:
+    name: 具身智能
+    categories: [cs.RO]
+    keywords: [manipulation, VLA, embodied, sim2real, locomotion,
+               dexterous, policy learning, imitation, grasping]
+    quota: 3
+    enabled: true
+  aerospace:
+    name: 飞行器
+    categories: [cs.RO, eess.SY, physics.flu-dyn]
+    keywords: [UAV, drone, aerial, flight, aero, wing, rotor,
+               trajectory, guidance, aerodynamic, quadrotor]
+    quota: 3
+    enabled: true
